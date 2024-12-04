@@ -1,39 +1,101 @@
-import * as readline from "readline"; // Import for interactive input
+import * as readline from "readline";
+import * as nodemailer from "nodemailer";
 
-// Function to detect frustration in a conversation
-function detectFrustration(conversation: string): string {
-    // List of frustration keywords
-    const frustrationKeywords = [
-        "angry", "furious", "hate", "stupid", "damn", "useless",
-        "idiot", "terrible", "awful", "horrible", "sucks", "rage", "annoyed"
-    ];
+// Set up readline interface to get user input
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-    // Check if conversation contains frustration keywords
-    for (let keyword of frustrationKeywords) {
-        if (conversation.toLowerCase().indexOf(keyword) !== -1) {  // indexOf() checks for presence
-            return `Frustration detected due to keyword: "${keyword}"`;
-        }
+// List of frustrated keywords to check
+const frustratedKeywords = [
+  "WTH",
+  "OMG",
+  "PLS",
+  "HELP",
+  "ASAP",
+  "NOW",
+  "FIX",
+  "ERROR",
+  "FAIL",
+  "angry",
+  "furious",
+  "hate",
+  "stupid",
+  "damn",
+  "useless",
+  "idiot",
+  "terrible",
+  "awful",
+  "horrible",
+  "sucks",
+  "rage",
+  "annoyed",
+];
+
+// Function to detect frustration in a message
+function detectFrustration(message: string): string[] {
+  const words = message.split(/\s+/); // Split message into words
+  const frustratedWords: string[] = [];
+
+  // Check for capitalized words with length > 2 and frustrated keywords
+  for (const word of words) {
+    if (
+      (word === word.toUpperCase() && word.length > 2) ||
+      frustratedKeywords.includes(word.toUpperCase())
+    ) {
+      frustratedWords.push(word);
     }
+  }
 
-    // Check for capitalized words (a sign of yelling)
-    const words = conversation.split(" ");
-    for (let word of words) {
-        if (word === word.toUpperCase() && word.length > 3) {
-            return `Frustration detected (capitalized words): "${word}"`;
-        }
-    }
-
-    return "No frustration detected.";
+  return frustratedWords;
 }
 
-// Interactive input via the terminal
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
+// Email sending function
+async function sendAlertEmail(frustratedWords: string[]) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "realrev123@gmail.com", // Your Gmail address
+      pass: "kszv ertz rttc yfnh", // The 16-character App Password from Google
+    },
+  });
 
-// Ask for user input and process the conversation
-rl.question("Enter the customer's message: ", (input) => {
-    console.log(detectFrustration(input)); // Run the detection function
+  try {
+    await transporter.sendMail({
+      from: '"Frustration Detector" realrev123@gmail.com', // Sender
+      to: "amrithakpoojary262@gmail.com", // Receiver (replace with recipient email)
+      subject: "Customer Frustration Alert 🚨",
+      text: `A customer is frustrated! Frustrated words detected: ${frustratedWords.join(
+        ", "
+      )}`,
+    });
+    console.log("Email sent successfully!");
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
+}
+
+// Main function
+function main() {
+  rl.question("Enter the customer's message: ", async (message: string) => {
+    const frustratedWords = detectFrustration(message);
+
+    if (frustratedWords.length > 0) {
+      console.log(
+        `Frustration detected (words): "${frustratedWords.join(", ")}"`
+      );
+
+      // Attempt to send the email
+      await sendAlertEmail(frustratedWords);
+    } else {
+      console.log("No frustration detected in the message.");
+    }
+
+    // Close the readline interface
     rl.close();
-});
+  });
+}
+
+// Run the program
+main();
